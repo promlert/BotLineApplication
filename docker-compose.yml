@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  botlineapplication:
+    image: ${DOCKER_REGISTRY-}botlineapplication
+    build:
+      context: .
+      dockerfile: BotLineApplication/Dockerfile
