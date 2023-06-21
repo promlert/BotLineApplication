@@ -1,4 +1,5 @@
-﻿using Line;
+﻿using BotLineApplication.Models;
+using Line;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -21,11 +22,13 @@ namespace BotLineApplication.Controllers
         }
         [Route("/SendMessage")]
         [HttpPost]
-        public string PostSendMessage(string id)
+        public string PostSendMessage(SendLine send)
         {
-            //  IMessage message = new Mess
-            ISendMessage message = new TextMessage("Sample");
-            _lineBot.Push(id, message);
+            if (send == null) return "No Message object";
+            if ( string.IsNullOrEmpty(send.msg)) return "No Message";
+            if (string.IsNullOrEmpty(send.user)) return "No User Id";
+            ISendMessage message = new TextMessage(send.user);
+            _lineBot.Push(send.user, message);
             return "Ok";
         }
     }

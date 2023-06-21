@@ -16,19 +16,21 @@ using System;
 using System.Threading.Tasks;
 using Line;
 using BotLineApplication.Configuration;
+using BotLineApplication.Repositories;
 
 namespace BotLineApplication.EventHandlers
 {
     public class MessageEventHandler : ILineEventHandler
     {
         private readonly LineBotSampleConfiguration configuration;
-
+        private readonly ILineDBRepository _lineDB;
         public LineEventType EventType
             => LineEventType.Message;
 
-        public MessageEventHandler(LineBotSampleConfiguration configuration)
+        public MessageEventHandler(LineBotSampleConfiguration configuration, ILineDBRepository lineDB)
         {
             this.configuration = configuration;
+            this._lineDB = lineDB;
         }
 
         public async Task Handle(ILineBot lineBot, ILineEvent evt)
@@ -46,23 +48,36 @@ namespace BotLineApplication.EventHandlers
 
                 await lineBot.Reply(evt.ReplyToken, response);
             }
-            else if (evt.Message.Text.ToLowerInvariant().Contains("user"))
+            else if (evt.Message.Text.ToLowerInvariant().Contains("1"))
             {
                 var userName = evt.Source.User.Id;
                 try
                 {
+           
                     var user = await lineBot.GetProfile(evt.Source.User);
                     userName = $"{user.DisplayName} ({user.UserId})";
+                   var u = await _lineDB.GetByUserName(user.UserId);
+                    if (u == null)
+                    {
+                        int c = await _lineDB.Create(new Models.SourceState { CreateDate = DateTime.Now, DisplayName = user.DisplayName, UserName = user.UserId, GroupName = "", Room = "", SourceType = evt.Source.SourceType.ToString() });
+                    }
+                    else
+                    {
+                        if( u.DisplayName != user.DisplayName)
+                        {
+
+                        }
+                    }
                 }
-                catch (LineBotException)
+                catch (Exception ex)
                 {
                 }
 
-                var response = new TextMessage($"You are: {userName}");
-
+              //  var response = new TextMessage($"You are: {userName}");
+                var response = new TextMessage($"การลงทะเบียนสำเร็จ");
                 await lineBot.Reply(evt.ReplyToken, response);
             }
-            else if (evt.Message.Text.ToLowerInvariant().Contains("logo"))
+            else if (evt.Message.Text.ToLowerInvariant().Contains("logo"))// read file resource
             {
                 var logoUrl = this.configuration.ResourcesUrl + "/Images/Line.Bot.SDK.png";
 

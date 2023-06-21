@@ -1,11 +1,10 @@
 using BotLineApplication.Configuration;
 using BotLineApplication.EventHandlers;
+using BotLineApplication.Repositories;
 using BotLineApplication.Services;
 using Line;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using static System.Net.Mime.MediaTypeNames;
-
 namespace BotLineApplication
 {
     public class Program
@@ -24,11 +23,10 @@ namespace BotLineApplication
                 var lineBotSampleConfiguration = builder.Configuration.Get<LineBotSampleConfiguration>();
                 _configuration.Bind("LineConfiguration", lineConfiguration);
                 _configuration.Bind("LineBotSampleConfiguration", lineBotSampleConfiguration);
-                //_configuration.Bind("LineConfiguration", lineConfiguration);
-
-                //_configuration.Bind("LineBotSampleConfiguration", lineBotSampleConfiguration);
-                // Add services to the container.
-
+              
+                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'ApplicationDbContextConnection' not found.");
+                ConnectionConfiguration conn = new ConnectionConfiguration { Connection = connectionString };
+            
                 builder.Services.AddControllers();
                 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
                 builder.Services.AddEndpointsApiExplorer();
@@ -36,6 +34,10 @@ namespace BotLineApplication
                 builder.Services
                   .AddSingleton<ILineConfiguration>(lineConfiguration)
                     .AddSingleton<ILineBot, LineBot>();
+                builder.Services.AddSingleton<ConnectionConfiguration>(conn)
+                    .AddSingleton<ILineDBRepository,LineDBRepository>();
+                
+                //builder.Services.AddTransient<ILineDBRepository, LineDBRepository>();
 
                 builder.Services
                   .AddSingleton<ILineBotLogger, LineBotSampleLogger>()

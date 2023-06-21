@@ -1,4 +1,5 @@
 ﻿using BotLineApplication.EventHandlers;
+using BotLineApplication.Repositories;
 using Line;
 
 namespace BotLineApplication.Services
@@ -7,7 +8,6 @@ namespace BotLineApplication.Services
     {
         private readonly ILineBot _lineBot;
         private readonly IServiceProvider _serviceProvider;
-
         public LineBotService(ILineBot lineBot, IServiceProvider serviceProvider)
         {
             _lineBot = lineBot;
