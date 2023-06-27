@@ -12,6 +12,8 @@ namespace BotLineApplication.Models
         public string GroupName { get; set; }
         public string Room { get; set; }
         public string SourceType { get; set; }
+        public string Account { get; set; }
+        public string VehicleRegistration { get; set; }
         public DateTime? CreateDate { get; set; }
     }
 }

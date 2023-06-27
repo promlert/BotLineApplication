@@ -13,31 +13,63 @@
 // under the License.
 
 using System.Threading.Tasks;
+using BotLineApplication.Models;
+using BotLineApplication.Repositories;
 using Line;
 
 namespace BotLineApplication.EventHandlers
 {
     public class FollowEventHandler : ILineEventHandler
     {
+        private readonly ILineDBRepository _lineDB;
         public LineEventType EventType
             => LineEventType.Follow;
-
+        public FollowEventHandler(ILineDBRepository lineDB)
+        {
+            _lineDB = lineDB;
+        }
         public async Task Handle(ILineBot lineBot, ILineEvent evt)
         {
             string userName = "[UNKNOW USER]";
-
+            string? UserId = null;
+            string DisplayName = "";
             try
             {
                 var user = await lineBot.GetProfile(evt.Source.User);
-                userName = $"{user.DisplayName} ({user.UserId})";
+                //   userName = $"{user.DisplayName} ({user.UserId})";
+                DisplayName = userName = $"{user.DisplayName}";
+                UserId = user.UserId;
             }
             catch (LineBotException)
             {
             }
+            try
+            {
+                string msg = $"Welcome, {userName} !\n กรุณาใส่ เลขทะเบียนรถ";
+                var response = new TextMessage(msg);
+                if (UserId != null)
+                {
+                    var m = await _lineDB.GetByUserName(UserId);
+                    if (m == null)
+                    {
+                        await _lineDB.Create(new SourceState { CreateDate = DateTime.Now, DisplayName = DisplayName, UserName = UserId, GroupName = "", Room = "", SourceType = evt.Source.SourceType.ToString() });
 
-            var response = new TextMessage($"Welcome, {userName} !");
+                    }
+                    else
+                    {
+                        m.DisplayName = DisplayName;
+                        m.CreateDate = DateTime.Now;
+                        await _lineDB.Update(m);
+                    }
+                    await _lineDB.Create(new LogMessage { UserId = UserId, Text = msg, CreateDate = DateTime.Now });
+                }
+                await lineBot.Reply(evt.ReplyToken, response);
+            }
+            catch (Exception ex)
+            {
 
-            await lineBot.Reply(evt.ReplyToken, response);
+                throw;
+            }
         }
     }
 }

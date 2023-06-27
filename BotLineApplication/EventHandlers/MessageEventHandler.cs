@@ -17,11 +17,16 @@ using System.Threading.Tasks;
 using Line;
 using BotLineApplication.Configuration;
 using BotLineApplication.Repositories;
+using System.Text.RegularExpressions;
+using System.Reflection.Metadata;
+using BotLineApplication.Models;
+using System.Linq;
 
 namespace BotLineApplication.EventHandlers
 {
     public class MessageEventHandler : ILineEventHandler
     {
+        private string[] message_filters = { "เลขทะเบียนรถ", "รหัสเข้าระบบ" };
         private readonly LineBotSampleConfiguration configuration;
         private readonly ILineDBRepository _lineDB;
         public LineEventType EventType
@@ -35,6 +40,7 @@ namespace BotLineApplication.EventHandlers
 
         public async Task Handle(ILineBot lineBot, ILineEvent evt)
         {
+            var reg = new Regex(@"เลขทะเบียนรถ");
             if (string.IsNullOrEmpty(evt.Message.Text))
                 return;
 
@@ -48,35 +54,134 @@ namespace BotLineApplication.EventHandlers
 
                 await lineBot.Reply(evt.ReplyToken, response);
             }
-            else if (evt.Message.Text.ToLowerInvariant().Contains("1"))
+
+
+            if(evt.Message.MessageType == MessageType.Text && evt.Source.User != null)
             {
-                var userName = evt.Source.User.Id;
                 try
                 {
-           
-                    var user = await lineBot.GetProfile(evt.Source.User);
-                    userName = $"{user.DisplayName} ({user.UserId})";
-                   var u = await _lineDB.GetByUserName(user.UserId);
-                    if (u == null)
-                    {
-                        int c = await _lineDB.Create(new Models.SourceState { CreateDate = DateTime.Now, DisplayName = user.DisplayName, UserName = user.UserId, GroupName = "", Room = "", SourceType = evt.Source.SourceType.ToString() });
-                    }
-                    else
-                    {
-                        if( u.DisplayName != user.DisplayName)
-                        {
 
+                    var message = await _lineDB.GetLogByUserId(evt.Source.User.Id);
+                    if (message != null && message.Count() > 0)
+                    {
+                        var m = message.Where(c => c.Text.Contains(message_filters[0]));
+                        if (m.Count() > 0)
+                        {
+                            var u = await _lineDB.GetByUserName(evt.Source.User.Id);
+                            u.VehicleRegistration = evt.Message.Text;
+                            await _lineDB.Update(u);
+                           
+                            var response = new TextMessage($"กรุณาใส่ รหัสเข้าระบบ");
+                            await _lineDB.Create(new LogMessage { UserId = evt.Source.User.Id, Text = response.Text, CreateDate = DateTime.Now });
+                            await lineBot.Reply(evt.ReplyToken, response);
+                        }
+
+                        var m2 = message.Where(c => c.Text.Contains(message_filters[1]));
+                        if (m2.Count() > 0)
+                        {
+                            var u = await _lineDB.GetByUserName(evt.Source.User.Id);
+                            u.Account = evt.Message.Text;
+                            await _lineDB.Update(u);
+                            var response = new TextMessage($"การลงทะเบียนสำเร็จ");
+                            await _lineDB.Create(new LogMessage { UserId = evt.Source.User.Id, Text = response.Text, CreateDate = DateTime.Now });
+                            await lineBot.Reply(evt.ReplyToken, response);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                }
 
-              //  var response = new TextMessage($"You are: {userName}");
-                var response = new TextMessage($"การลงทะเบียนสำเร็จ");
-                await lineBot.Reply(evt.ReplyToken, response);
+                   
+                }
             }
+
+            //else if (evt.Message.Text.Contains("เลขทะเบียนรถ"))
+            //{
+            //    var userName = evt.Source.User.Id;
+            //    try
+            //    {
+
+            //        var user = await lineBot.GetProfile(evt.Source.User);
+            //        userName = $"{user.DisplayName} ({user.UserId})";
+            //        var u = await _lineDB.GetByUserName(user.UserId);
+            //        if (u == null)
+            //        {
+            //            int c = await _lineDB.Create(new Models.SourceState { CreateDate = DateTime.Now, DisplayName = user.DisplayName, UserName = user.UserId, GroupName = "", Room = "", SourceType = evt.Source.SourceType.ToString() });
+            //        }
+            //        else
+            //        {
+            //            if (u.DisplayName != user.DisplayName)
+            //            {
+
+            //            }
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //    }
+
+            //    //  var response = new TextMessage($"You are: {userName}");
+            //    var response = new TextMessage($"กรุณาใส่ รหัสเข้าระบบ");
+            //    await lineBot.Reply(evt.ReplyToken, response);
+            //}
+            //else if ( evt.Message.Text.Contains("รหัสเข้าระบบ"))
+            //{
+            //    var userName = evt.Source.User.Id;
+            //    try
+            //    {
+
+            //        var user = await lineBot.GetProfile(evt.Source.User);
+            //        userName = $"{user.DisplayName} ({user.UserId})";
+            //        var u = await _lineDB.GetByUserName(user.UserId);
+            //        if (u == null)
+            //        {
+            //            int c = await _lineDB.Create(new Models.SourceState { CreateDate = DateTime.Now, DisplayName = user.DisplayName, UserName = user.UserId, GroupName = "", Room = "", SourceType = evt.Source.SourceType.ToString() });
+            //        }
+            //        else
+            //        {
+            //            if (u.DisplayName != user.DisplayName)
+            //            {
+
+            //            }
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //    }
+
+            //    //  var response = new TextMessage($"You are: {userName}");
+            //    var response = new TextMessage($"การลงทะเบียนสำเร็จ");
+            //    await lineBot.Reply(evt.ReplyToken, response);
+            //}
+            //else if (evt.Message.Text.Contains("เลขทะเบียนรถ") || evt.Message.Text.Contains("รหัสเข้าระบบ") ) 
+            //{
+            //    var userName = evt.Source.User.Id;
+            //    try
+            //    {
+           
+            //        var user = await lineBot.GetProfile(evt.Source.User);
+            //        userName = $"{user.DisplayName} ({user.UserId})";
+            //       var u = await _lineDB.GetByUserName(user.UserId);
+            //        if (u == null)
+            //        {
+            //            int c = await _lineDB.Create(new Models.SourceState { CreateDate = DateTime.Now, DisplayName = user.DisplayName, UserName = user.UserId, GroupName = "", Room = "", SourceType = evt.Source.SourceType.ToString() });
+            //        }
+            //        else
+            //        {
+            //            if( u.DisplayName != user.DisplayName)
+            //            {
+
+            //            }
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //    }
+
+            //  //  var response = new TextMessage($"You are: {userName}");
+            //    var response = new TextMessage($"การลงทะเบียนสำเร็จ");
+            //    await lineBot.Reply(evt.ReplyToken, response);
+            //}
             else if (evt.Message.Text.ToLowerInvariant().Contains("logo"))// read file resource
             {
                 var logoUrl = this.configuration.ResourcesUrl + "/Images/Line.Bot.SDK.png";
