@@ -28,16 +28,19 @@ namespace BotLineApplication.EventHandlers
     {
         private string[] message_filters = { "เลขทะเบียนรถ", "รหัสเข้าระบบ" };
         private readonly LineBotSampleConfiguration configuration;
-        private readonly ILineDBRepository _lineDB;
+       // private readonly ILineDBRepository _lineDB;
         public LineEventType EventType
             => LineEventType.Message;
 
-        public MessageEventHandler(LineBotSampleConfiguration configuration, ILineDBRepository lineDB)
+        // public MessageEventHandler(LineBotSampleConfiguration configuration, ILineDBRepository lineDB)
+        // {
+        //     this.configuration = configuration;
+        //     this._lineDB = lineDB;
+        // }
+        public MessageEventHandler(LineBotSampleConfiguration configuration)
         {
             this.configuration = configuration;
-            this._lineDB = lineDB;
         }
-
         public async Task Handle(ILineBot lineBot, ILineEvent evt)
         {
             var reg = new Regex(@"เลขทะเบียนรถ");
@@ -61,32 +64,32 @@ namespace BotLineApplication.EventHandlers
                 try
                 {
 
-                    var message = await _lineDB.GetLogByUserId(evt.Source.User.Id);
-                    if (message != null && message.Count() > 0)
-                    {
-                        var m = message.Where(c => c.Text.Contains(message_filters[0]));
-                        if (m.Count() > 0)
-                        {
-                            var u = await _lineDB.GetByUserName(evt.Source.User.Id);
-                            u.VehicleRegistration = evt.Message.Text;
-                            await _lineDB.Update(u);
+                    // var message = await _lineDB.GetLogByUserId(evt.Source.User.Id);
+                    // if (message != null && message.Count() > 0)
+                    // {
+                    //     var m = message.Where(c => c.Text.Contains(message_filters[0]));
+                    //     if (m.Count() > 0)
+                    //     {
+                    //         var u = await _lineDB.GetByUserName(evt.Source.User.Id);
+                    //         u.VehicleRegistration = evt.Message.Text;
+                    //         await _lineDB.Update(u);
                            
-                            var response = new TextMessage($"กรุณาใส่ รหัสเข้าระบบ");
-                            await _lineDB.Create(new LogMessage { UserId = evt.Source.User.Id, Text = response.Text, CreateDate = DateTime.Now });
-                            await lineBot.Reply(evt.ReplyToken, response);
-                        }
+                    //         var response = new TextMessage($"กรุณาใส่ รหัสเข้าระบบ");
+                    //         await _lineDB.Create(new LogMessage { UserId = evt.Source.User.Id, Text = response.Text, CreateDate = DateTime.Now });
+                    //         await lineBot.Reply(evt.ReplyToken, response);
+                    //     }
 
-                        var m2 = message.Where(c => c.Text.Contains(message_filters[1]));
-                        if (m2.Count() > 0)
-                        {
-                            var u = await _lineDB.GetByUserName(evt.Source.User.Id);
-                            u.Account = evt.Message.Text;
-                            await _lineDB.Update(u);
-                            var response = new TextMessage($"การลงทะเบียนสำเร็จ");
-                            await _lineDB.Create(new LogMessage { UserId = evt.Source.User.Id, Text = response.Text, CreateDate = DateTime.Now });
-                            await lineBot.Reply(evt.ReplyToken, response);
-                        }
-                    }
+                    //     var m2 = message.Where(c => c.Text.Contains(message_filters[1]));
+                    //     if (m2.Count() > 0)
+                    //     {
+                    //         var u = await _lineDB.GetByUserName(evt.Source.User.Id);
+                    //         u.Account = evt.Message.Text;
+                    //         await _lineDB.Update(u);
+                    //         var response = new TextMessage($"การลงทะเบียนสำเร็จ");
+                    //         await _lineDB.Create(new LogMessage { UserId = evt.Source.User.Id, Text = response.Text, CreateDate = DateTime.Now });
+                    //         await lineBot.Reply(evt.ReplyToken, response);
+                    //     }
+                    // }
                 }
                 catch (Exception ex)
                 {
